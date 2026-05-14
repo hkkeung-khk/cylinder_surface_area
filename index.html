@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cylinder Surface Area Demonstration</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for camera interaction -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- MathJax for rendering math formulas -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas-container { width: 100%; height: 100%; }
+        
+        /* Custom slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .math-container {
+            font-size: 1.05em;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen">
+
+    <!-- Left Sidebar: Controls -->
+    <div id="sidebar" class="w-full md:w-1/3 lg:w-1/4 h-auto md:h-full bg-white shadow-lg z-10 flex flex-col overflow-y-auto">
+        <!-- Header with Model Size Controls -->
+        <div class="p-5 bg-blue-700 text-white shadow-md flex justify-between items-start">
+            <div>
+                <h1 class="text-xl font-bold">Surface Area<br/><span class="text-lg">表面積演示</span></h1>
+                <p class="text-xs text-blue-100 mt-1">Interactive 3D Geometry / 互動3D幾何</p>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <span class="text-[10px] uppercase font-bold text-blue-200 tracking-wider text-center">Model Size<br/>模型大小</span>
+                <div class="flex gap-1 bg-blue-800 p-1 rounded shadow-inner">
+                    <button id="model-shrink-btn" class="bg-blue-600 hover:bg-blue-500 text-white w-6 h-6 rounded text-sm flex items-center justify-center transition-colors" title="Zoom Out Model">-</button>
+                    <button id="model-grow-btn" class="bg-blue-600 hover:bg-blue-500 text-white w-6 h-6 rounded text-sm flex items-center justify-center transition-colors" title="Zoom In Model">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 flex-grow flex flex-col gap-4">
+            
+            <!-- Situation Selector -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Select Situation / 選擇情境</label>
+                <select id="mode-selector" class="w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                    <option value="1">1. Normal Cylinder (Solid) / 實心圓柱</option>
+                    <option value="2">2. Cylinder with a Hole (Pipe) / 空心圓柱(管)</option>
+                    <option value="3" selected>3. Stacked Cylinders / 疊加圓柱</option>
+                </select>
+            </div>
+
+            <!-- Visual Options (Unfold) -->
+            <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-sm font-bold text-indigo-800">Unfold All / 展開圖形</label>
+                    <button id="auto-unfold-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs shadow transition-colors font-semibold">Unfold / 自動展開</button>
+                    <span id="unfold-val" class="text-sm font-bold text-indigo-600 w-10 text-right">0%</span>
+                </div>
+                <input type="range" id="unfold-slider" min="0" max="1" step="0.01" value="0">
+                <p class="text-[11px] leading-tight text-indigo-700 mt-2 font-medium">
+                    Interaction Tips / 互動提示: <br/>
+                    <span class="opacity-80">1. <b>Double-Click</b> any part to lay flat! / <b>雙擊</b>任何部分以單獨平放！</span><br/>
+                    <span class="opacity-80">2. <b>Drag</b> parts freely once unrolled. / 展開後可自由<b>拖動物件</b>。</span>
+                </p>
+            </div>
+
+            <!-- Parameters -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h2 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2" id="params-title">Dimensions / 尺寸</h2>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700" id="label-radius">Bottom Radius / 底部半徑 (\(R_{b}\))</label>
+                        <span id="radius-val" class="text-sm font-bold text-blue-600">7.0</span>
+                    </div>
+                    <input type="range" id="radius-slider" min="1" max="12" step="0.1" value="7">
+                </div>
+
+                <div id="height-container" class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700" id="label-height">Bottom Height / 底部高度 (\(H_{b}\))</label>
+                        <span id="height-val" class="text-sm font-bold text-blue-600">4.0</span>
+                    </div>
+                    <input type="range" id="height-slider" min="1" max="10" step="0.1" value="4">
+                </div>
+
+                <div id="inner-radius-container" class="mb-4 hidden">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">Inner Radius / 內半徑 (\(r_{in}\))</label>
+                        <span id="inner-radius-val" class="text-sm font-bold" style="color: #E26D5C;">4.0</span>
+                    </div>
+                    <input type="range" id="inner-radius-slider" min="0.1" max="6.9" step="0.1" value="4.0">
+                </div>
+
+                <div id="top-radius-container" class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">Top Radius / 頂部半徑 (\(R_{t}\))</label>
+                        <span id="top-radius-val" class="text-sm font-bold" style="color: #D0C8CC;">3.0</span>
+                    </div>
+                    <input type="range" id="top-radius-slider" min="0.1" max="7" step="0.1" value="3.0">
+                </div>
+
+                <div id="top-height-container">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">Top Height / 頂部高度 (\(H_{t}\))</label>
+                        <span id="top-height-val" class="text-sm font-bold" style="color: #D0C8CC;">4.0</span>
+                    </div>
+                    <input type="range" id="top-height-slider" min="1" max="10" step="0.1" value="4.0">
+                </div>
+            </div>
+
+            <!-- Calculations -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-inner flex-grow mb-4">
+                <h2 class="text-sm font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">Area Calculations / 面積計算</h2>
+                <div id="math-display" class="math-container text-gray-800">
+                    <!-- MathJax content will be injected here -->
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Right Area: 3D Canvas -->
+    <div class="w-full md:w-2/3 lg:w-3/4 h-[50vh] md:h-full relative flex-grow" id="canvas-wrapper">
+        <div id="canvas-container"></div>
+        
+        <!-- Legend Overlay -->
+        <div id="dynamic-legend" class="absolute top-4 right-4 bg-white/90 p-3 rounded shadow border border-gray-200 text-sm pointer-events-none">
+            <!-- Populated by JS -->
+        </div>
+
+        <div class="absolute bottom-4 right-4 bg-white/80 px-3 py-1 rounded shadow text-xs text-gray-600 pointer-events-none">
+            Left Click: Rotate | Right Click: Pan | Scroll: Zoom
+        </div>
+    </div>
+
+    <script>
+        // --- 3D Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8fafc); 
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(20, 20, 25); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight.position.set(15, 25, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 25;
+        dirLight.shadow.camera.bottom = -25;
+        dirLight.shadow.camera.left = -25;
+        dirLight.shadow.camera.right = 25;
+        scene.add(dirLight);
+
+        // Main group to hold shapes - scale applies here
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        // --- Materials (Palette matching the provided image reference) ---
+        const matOptions = { roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide, transparent: true, opacity: 0.95 };
+        
+        const cOuter = 0xA8D0E6;   // Sky blue
+        const cTop = 0xF8E9A1;     // Pale yellow/sand
+        const cBottom = 0xBEE9E8;  // Mint green
+        const cInner = 0xE26D5C;   // Burnt orange
+        const cTopLat = 0xD0C8CC;  // Dusty mauve
+        const cTopBase = 0xFAD0C4; // Peach
+
+        const matLateral = new THREE.MeshStandardMaterial({ color: cOuter, ...matOptions });
+        const matTop = new THREE.MeshStandardMaterial({ color: cTop, ...matOptions });
+        const matBottom = new THREE.MeshStandardMaterial({ color: cBottom, ...matOptions });
+        const matInner = new THREE.MeshStandardMaterial({ color: cInner, ...matOptions });
+        const matTopLat = new THREE.MeshStandardMaterial({ color: cTopLat, ...matOptions });
+        const matTopBase = new THREE.MeshStandardMaterial({ color: cTopBase, ...matOptions });
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x2C3E50, linewidth: 1, transparent: true, opacity: 0.4 });
+
+        // --- Logic & State ---
+        let currentMode = 3; 
+        let params = { r: 7.0, rin: 4.0, h: 4.0, rt: 3.0, ht: 4.0, unfold: 0 };
+        let activeFaces = [];
+        let autoAnimationDir = 0; // 1 for unfolding, -1 for folding
+        let modelScale = 1.0; 
+
+        // DOM Elements
+        const modeSelector = document.getElementById('mode-selector');
+        const radiusSlider = document.getElementById('radius-slider');
+        const heightSlider = document.getElementById('height-slider');
+        const innerRadiusSlider = document.getElementById('inner-radius-slider');
+        const topRadiusSlider = document.getElementById('top-radius-slider');
+        const topHeightSlider = document.getElementById('top-height-slider');
+        const unfoldSlider = document.getElementById('unfold-slider');
+        const autoUnfoldBtn = document.getElementById('auto-unfold-btn');
+        
+        const radiusVal = document.getElementById('radius-val');
+        const heightVal = document.getElementById('height-val');
+        const innerRadiusVal = document.getElementById('inner-radius-val');
+        const topRadiusVal = document.getElementById('top-radius-val');
+        const topHeightVal = document.getElementById('top-height-val');
+        const unfoldVal = document.getElementById('unfold-val');
+        
+        const innerRadiusContainer = document.getElementById('inner-radius-container');
+        const topRadiusContainer = document.getElementById('top-radius-container');
+        const topHeightContainer = document.getElementById('top-height-container');
+        const labelRadius = document.getElementById('label-radius');
+        const labelHeight = document.getElementById('label-height');
+
+        document.getElementById('mode-selector').value = "3";
+
+        // --- Model Resizing Handlers ---
+        document.getElementById('model-shrink-btn').addEventListener('click', () => {
+            modelScale = Math.max(0.4, modelScale - 0.2);
+            mainGroup.scale.set(modelScale, modelScale, modelScale);
+        });
+
+        document.getElementById('model-grow-btn').addEventListener('click', () => {
+            modelScale = Math.min(2.5, modelScale + 0.2);
+            mainGroup.scale.set(modelScale, modelScale, modelScale);
+        });
+
+        // --- UI Updates ---
+        function updateUIForMode() {
+            if (currentMode === 1) {
+                labelRadius.innerHTML = "Radius / 半徑 (\\(r\\))";
+                labelHeight.innerHTML = "Height / 高度 (\\(h\\))";
+                innerRadiusContainer.style.display = 'none';
+                topRadiusContainer.style.display = 'none';
+                topHeightContainer.style.display = 'none';
+            } else if (currentMode === 2) {
+                labelRadius.innerHTML = "Outer Radius / 外半徑 (\\(R\\))";
+                labelHeight.innerHTML = "Height / 高度 (\\(h\\))";
+                innerRadiusContainer.style.display = 'block';
+                topRadiusContainer.style.display = 'none';
+                topHeightContainer.style.display = 'none';
+            } else if (currentMode === 3) {
+                labelRadius.innerHTML = "Bottom Radius / 底部半徑 (\\(R_b\\))";
+                labelHeight.innerHTML = "Bottom Height / 底部高度 (\\(H_b\\))";
+                innerRadiusContainer.style.display = 'none';
+                topRadiusContainer.style.display = 'block';
+                topHeightContainer.style.display = 'block';
+            }
+            updateLegend();
+        }
+
+        function updateAutoBtnUI() {
+            if (params.unfold >= 1 || autoAnimationDir === 1) {
+                autoUnfoldBtn.innerText = "Fold / 自動折起";
+            } else {
+                autoUnfoldBtn.innerText = "Unfold / 自動展開";
+            }
+        }
+
+        // --- Parameters Handlers ---
+        modeSelector.addEventListener('change', (e) => {
+            currentMode = parseInt(e.target.value);
+            updateUIForMode();
+            buildGeometry();
+            updateMath();
+        });
+
+        unfoldSlider.addEventListener('input', (e) => {
+            params.unfold = parseFloat(e.target.value);
+            unfoldVal.innerText = Math.round(params.unfold * 100) + '%';
+            
+            autoAnimationDir = 0; // Stop auto animation when user manually drags
+            updateAutoBtnUI();
+        });
+
+        autoUnfoldBtn.addEventListener('click', () => {
+            if (params.unfold >= 1 || autoAnimationDir === 1) {
+                autoAnimationDir = -1; // Switch to folding
+            } else {
+                autoAnimationDir = 1;  // Switch to unfolding
+            }
+            updateAutoBtnUI();
+        });
+
+        radiusSlider.addEventListener('input', (e) => {
+            params.r = parseFloat(e.target.value);
+            radiusVal.innerText = params.r.toFixed(1);
+            if (params.rin >= params.r) {
+                params.rin = Math.max(0.1, params.r - 0.1);
+                innerRadiusSlider.value = params.rin;
+                innerRadiusVal.innerText = params.rin.toFixed(1);
+            }
+            innerRadiusSlider.max = params.r - 0.1;
+            if (params.rt > params.r) {
+                params.rt = params.r;
+                topRadiusSlider.value = params.rt;
+                topRadiusVal.innerText = params.rt.toFixed(1);
+            }
+            topRadiusSlider.max = params.r;
+            buildGeometry(); updateMath();
+        });
+
+        innerRadiusSlider.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (val >= params.r) { val = params.r - 0.1; e.target.value = val; }
+            params.rin = val; innerRadiusVal.innerText = params.rin.toFixed(1);
+            buildGeometry(); updateMath();
+        });
+
+        topRadiusSlider.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (val > params.r) { val = params.r; e.target.value = val; }
+            params.rt = val; topRadiusVal.innerText = params.rt.toFixed(1);
+            buildGeometry(); updateMath();
+        });
+
+        heightSlider.addEventListener('input', (e) => {
+            params.h = parseFloat(e.target.value); heightVal.innerText = params.h.toFixed(1);
+            buildGeometry(); updateMath();
+        });
+
+        topHeightSlider.addEventListener('input', (e) => {
+            params.ht = parseFloat(e.target.value); topHeightVal.innerText = params.ht.toFixed(1);
+            buildGeometry(); updateMath();
+        });
+
+        // --- Custom Geometry Generation ---
+
+        function addLateral(r, h, foldedPos, unfoldedPos, mat) {
+            const width = 2 * Math.PI * r;
+            const geo = new THREE.PlaneGeometry(width, h, 64, 1);
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            
+            const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMaterial);
+            
+            const group = new THREE.Group();
+            group.add(mesh); group.add(edges);
+            
+            group.userData = { 
+                dragOffset: new THREE.Vector3(), 
+                isDraggable: true,
+                isFlat: false,
+                flatAngleCurrent: 0,
+                targetFlatAngle: 0
+            };
+            mainGroup.add(group);
+
+            activeFaces.push({
+                group: group,
+                update: (unfoldAmt) => {
+                    const thetaMax = THREE.MathUtils.lerp(2 * Math.PI, 0.0001, unfoldAmt);
+                    const currentR = width / thetaMax;
+                    const pos = geo.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const x = pos.getX(i);
+                        const y = pos.getY(i);
+                        const alpha = (x / width) * thetaMax;
+                        const nx = currentR * Math.sin(alpha);
+                        const nz = currentR * Math.cos(alpha) - currentR;
+                        pos.setXYZ(i, nx, y, nz);
+                    }
+                    geo.computeVertexNormals();
+                    
+                    edges.geometry.dispose();
+                    edges.geometry = new THREE.EdgesGeometry(geo);
+
+                    group.position.lerpVectors(foldedPos, unfoldedPos, unfoldAmt);
+                    group.position.add(group.userData.dragOffset);
+                    group.rotation.x = group.userData.flatAngleCurrent;
+                }
+            });
+        }
+
+        function addCap(rOuter, rInner, hingePos, foldAngle, unfoldedPos, mat, isTop) {
+            let geo;
+            if (rInner > 0) geo = new THREE.RingGeometry(rInner, rOuter, 64);
+            else geo = new THREE.CircleGeometry(rOuter, 64);
+            
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            
+            const shiftY = isTop ? rOuter : -rOuter;
+            mesh.position.set(0, shiftY, 0);
+
+            const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMaterial);
+            edges.position.set(0, shiftY, 0);
+            
+            const group = new THREE.Group();
+            group.add(mesh); group.add(edges);
+            
+            group.userData = { 
+                dragOffset: new THREE.Vector3(), 
+                isDraggable: true,
+                isFlat: false,
+                flatAngleCurrent: 0,
+                targetFlatAngle: 0
+            };
+            mainGroup.add(group);
+
+            activeFaces.push({
+                group: group,
+                update: (unfoldAmt) => {
+                    group.position.lerpVectors(hingePos, unfoldedPos, unfoldAmt);
+                    group.position.add(group.userData.dragOffset);
+                    // Base fold/unfold rotation + individual double click lay-flat rotation
+                    group.rotation.x = THREE.MathUtils.lerp(foldAngle, 0, unfoldAmt) + group.userData.flatAngleCurrent;
+                }
+            });
+        }
+
+        function buildGeometry() {
+            activeFaces = [];
+            while(mainGroup.children.length > 0) mainGroup.remove(mainGroup.children[0]);
+
+            const R = params.r; const H = params.h;
+            
+            if (currentMode === 1) {
+                controls.target.set(0, 0, 0);
+                addLateral(R, H, new THREE.Vector3(0,0,R), new THREE.Vector3(0,0,0), matLateral);
+                addCap(R, 0, new THREE.Vector3(0, H/2, R), -Math.PI/2, new THREE.Vector3(0, H/2, 0), matTop, true);
+                addCap(R, 0, new THREE.Vector3(0, -H/2, R), Math.PI/2, new THREE.Vector3(0, -H/2, 0), matBottom, false);
+            } 
+            else if (currentMode === 2) {
+                controls.target.set(0, 0, 0);
+                const rin = params.rin;
+                addLateral(R, H, new THREE.Vector3(0,0,R), new THREE.Vector3(0,0,0), matLateral);
+                addCap(R, rin, new THREE.Vector3(0, H/2, R), -Math.PI/2, new THREE.Vector3(0, H/2, 0), matTop, true);
+                addCap(R, rin, new THREE.Vector3(0, -H/2, R), Math.PI/2, new THREE.Vector3(0, -H/2, 0), matBottom, false);
+                addLateral(rin, H, new THREE.Vector3(0,0,rin), new THREE.Vector3(0, -H - 2*R - 2, 0), matInner);
+            } 
+            else if (currentMode === 3) {
+                const R2 = params.rt; const H2 = params.ht;
+                controls.target.set(0, H/2, 0);
+                addLateral(R, H, new THREE.Vector3(0, -H/2, R), new THREE.Vector3(0, -H/2, 0), matLateral);
+                addCap(R, 0, new THREE.Vector3(0, -H, R), Math.PI/2, new THREE.Vector3(0, -H, 0), matBottom, false);
+                addCap(R, R2, new THREE.Vector3(0, 0, R), -Math.PI/2, new THREE.Vector3(0, 0, 0), matTop, true);
+                addLateral(R2, H2, new THREE.Vector3(0, H2/2, R2), new THREE.Vector3(0, 2*R + H2/2 + 1, 0), matTopLat);
+                addCap(R2, 0, new THREE.Vector3(0, H2, R2), -Math.PI/2, new THREE.Vector3(0, 2*R + H2 + 1, 0), matTopBase, true);
+            }
+        }
+
+        // --- Displays (Bilingual Updates) ---
+        function updateLegend() {
+            const legend = document.getElementById('dynamic-legend');
+            let html = '<h3 class="font-bold text-gray-700 mb-2 text-xs uppercase">Color Legend / 顏色圖例</h3>';
+            const addRow = (color, name) => { html += `<div class="flex items-center gap-2 mb-1"><div class="w-4 h-4 rounded opacity-90" style="background-color: #${color.toString(16).padStart(6, '0')}"></div> <span class="text-gray-600">${name}</span></div>`; };
+
+            if (currentMode === 1) { 
+                addRow(cOuter, 'Lateral Side / 側面'); addRow(cTop, 'Top Base / 頂部底面'); addRow(cBottom, 'Bottom Base / 底部底面'); 
+            } 
+            else if (currentMode === 2) { 
+                addRow(cOuter, 'Outer Side / 外側面'); addRow(cTop, 'Top Ring / 頂部圓環'); addRow(cBottom, 'Bottom Ring / 底部圓環'); addRow(cInner, 'Inner Side / 內側面'); 
+            } 
+            else if (currentMode === 3) { 
+                addRow(cOuter, 'Bottom Side / 底部側面'); addRow(cBottom, 'Bottom Base / 底部底面'); addRow(cTop, 'Exposed Ring / 外露圓環'); addRow(cTopLat, 'Top Side / 頂部側面'); addRow(cTopBase, 'Top Base / 頂部頂面'); 
+            }
+            legend.innerHTML = html;
+        }
+
+        function updateMath() {
+            let mathHTML = "";
+            if (currentMode === 1) {
+                const r = params.r; const h = params.h;
+                const lateral = 2 * Math.PI * r * h; const baseArea = Math.PI * Math.pow(r, 2);
+                mathHTML = `<p class="mb-2 text-sm text-gray-500 font-semibold">Solid Cylinder / 實心圓柱</p><p>\\[ A = \\color{#3b82f6}{2\\pi(${r})(${h})} + 2\\pi(${r}^2) \\]</p><p class="text-xl font-bold text-gray-800 mt-2">\\[ A \\approx ${(lateral + 2 * baseArea).toFixed(2)} \\]</p>`;
+            } else if (currentMode === 2) {
+                const R = params.r; const rin = params.rin; const h = params.h;
+                const outer = 2 * Math.PI * R * h; const inner = 2 * Math.PI * rin * h; const ringArea = Math.PI * (Math.pow(R, 2) - Math.pow(rin, 2));
+                mathHTML = `<p class="mb-2 text-sm text-gray-500 font-semibold">Hollow Pipe / 空心圓柱(管)</p><p>\\[ A = \\color{#3b82f6}{2\\pi R h} + \\color{#f97316}{2\\pi r_{in} h} + \\color{#f87171}{2\\pi(R^2 - r_{in}^2)} \\]</p><p class="text-xl font-bold text-gray-800 mt-2">\\[ A \\approx ${(outer + inner + 2 * ringArea).toFixed(2)} \\]</p>`;
+            } else if (currentMode === 3) {
+                const Rb = params.r; const Hb = params.h; const Rt = params.rt; const Ht = params.ht;
+                const botLat = 2 * Math.PI * Rb * Hb; const botBase = Math.PI * Math.pow(Rb, 2); const topLat = 2 * Math.PI * Rt * Ht;
+                mathHTML = `<div style="font-size: 0.85em;"><p class="mb-1 text-xs text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200"><b>Notice / 注意：</b><br/>The Exposed Ring area + Top Base area perfectly equals one Bottom Base area! <br/>外露圓環面積 + 頂部底面積 剛好等於 一個底部底面積！</p><p>\\[ A = \\color{#3b82f6}{2\\pi R_b H_b} + \\color{#06b6d4}{2\\pi R_t H_t} + 2\\pi R_b^2 \\]</p><p class="text-xl font-bold text-gray-800 mt-1">\\[ A \\approx ${(botLat + topLat + 2 * botBase).toFixed(2)} \\]</p></div>`;
+            }
+            document.getElementById('math-display').innerHTML = mathHTML;
+            if (window.MathJax) MathJax.typesetPromise([document.getElementById('math-display')]).catch((err) => console.log(err.message));
+        }
+
+        // --- Dragging & Double Click Interactions ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let draggedFace = null;
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); 
+        let hitPointStart = new THREE.Vector3();
+        let offsetStart = new THREE.Vector3();
+
+        container.addEventListener('pointerdown', (e) => {
+            if (params.unfold < 0.95) return; // Disallow dragging if not unfolded
+            
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(mainGroup.children, true);
+            
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj && !obj.userData.isDraggable) obj = obj.parent;
+                
+                if (obj && obj.userData.isDraggable) {
+                    draggedFace = obj;
+                    controls.enabled = false;
+                    raycaster.ray.intersectPlane(dragPlane, hitPointStart);
+                    offsetStart.copy(obj.userData.dragOffset);
+                    container.style.cursor = 'grabbing';
+                }
+            }
+        });
+
+        // Smart Double Click logic
+        container.addEventListener('dblclick', (e) => {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(mainGroup.children, true);
+            
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj && !obj.userData.isDraggable) obj = obj.parent;
+                
+                if (obj && obj.userData.isDraggable) {
+                    // If the whole model is not fully unfolded, trigger global unfold
+                    if (params.unfold < 0.99) {
+                        if (autoAnimationDir !== 1) autoUnfoldBtn.click();
+                        return;
+                    }
+
+                    // If it is fully unfolded, toggle the face to lay flat or stand up
+                    const ud = obj.userData;
+                    ud.isFlat = !ud.isFlat;
+                    ud.targetFlatAngle = ud.isFlat ? -Math.PI / 2 : 0;
+                }
+            }
+        });
+
+        container.addEventListener('pointermove', (e) => {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            if (draggedFace) {
+                const hitPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, hitPoint)) {
+                    const diff = hitPoint.sub(hitPointStart);
+                    diff.divideScalar(modelScale); 
+                    draggedFace.userData.dragOffset.copy(offsetStart).add(diff);
+                }
+            } 
+            else {
+                const intersects = raycaster.intersectObjects(mainGroup.children, true);
+                const isHovering = intersects.some(inter => {
+                    let o = inter.object; while(o && !o.userData.isDraggable) o = o.parent; return !!o;
+                });
+                container.style.cursor = isHovering ? 'pointer' : 'default';
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            draggedFace = null;
+            controls.enabled = true;
+            container.style.cursor = 'default';
+        });
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        // --- Animation Engine ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            
+            // Global slider auto animation
+            if (autoAnimationDir !== 0) {
+                params.unfold += 0.015 * autoAnimationDir; 
+                if (params.unfold >= 1) { 
+                    params.unfold = 1; 
+                    autoAnimationDir = 0; 
+                    updateAutoBtnUI();
+                } else if (params.unfold <= 0) {
+                    params.unfold = 0;
+                    autoAnimationDir = 0;
+                    updateAutoBtnUI();
+                }
+                unfoldSlider.value = params.unfold;
+                unfoldVal.innerText = Math.round(params.unfold * 100) + '%';
+            }
+
+            // Sync all active faces
+            activeFaces.forEach(f => {
+                const ud = f.group.userData;
+                
+                // --- SMOOTH AUTO-RETURN MAGIC ---
+                // If the user starts folding the model back up (unfold < 0.99),
+                // gracefully fly all pieces back to their original positions and angles.
+                if (params.unfold < 0.99) {
+                    ud.isFlat = false;
+                    ud.targetFlatAngle = 0;
+                    ud.dragOffset.lerp(new THREE.Vector3(0, 0, 0), 0.15); // smoothly return home
+                }
+
+                // Animate double-click lay-flat rotation
+                if (Math.abs(ud.targetFlatAngle - ud.flatAngleCurrent) > 0.001) {
+                    ud.flatAngleCurrent += (ud.targetFlatAngle - ud.flatAngleCurrent) * 0.15;
+                } else {
+                    ud.flatAngleCurrent = ud.targetFlatAngle;
+                }
+
+                // Universally apply the global unfold parameter
+                f.update(params.unfold);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        updateAutoBtnUI();
+        updateUIForMode();
+        buildGeometry();
+        animate();
+        window.addEventListener('load', () => setTimeout(updateMath, 500));
+    </script>
+</body>
+</html>
