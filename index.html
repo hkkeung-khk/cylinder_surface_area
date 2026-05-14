@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,12 +50,39 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Hide number input arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        input[type=number]:focus {
+            outline: none;
+            border-bottom: 2px solid #3b82f6;
+        }
+        
+        /* Dimension Tooltip Transition */
+        #dim-tooltip {
+            transition: opacity 0.2s, transform 0.2s;
+            user-select: none;
+        }
+        #dim-tooltip.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen">
 
     <!-- Left Sidebar: Controls -->
-    <div id="sidebar" class="w-full md:w-1/3 lg:w-1/4 h-auto md:h-full bg-white shadow-lg z-10 flex flex-col overflow-y-auto">
+    <div id="sidebar" class="w-full md:w-1/3 lg:w-1/4 h-auto md:h-full bg-white shadow-lg z-10 flex flex-col overflow-y-auto z-20 relative">
         <!-- Header with Model Size Controls -->
         <div class="p-5 bg-blue-700 text-white shadow-md flex justify-between items-start">
             <div>
@@ -93,8 +120,8 @@
                 <input type="range" id="unfold-slider" min="0" max="1" step="0.01" value="0">
                 <p class="text-[11px] leading-tight text-indigo-700 mt-2 font-medium">
                     Interaction Tips / 互動提示: <br/>
-                    <span class="opacity-80">1. <b>Double-Click</b> any part to lay flat! / <b>雙擊</b>任何部分以單獨平放！</span><br/>
-                    <span class="opacity-80">2. <b>Drag</b> parts freely once unrolled. / 展開後可自由<b>拖動物件</b>。</span>
+                    <span class="opacity-80">1. <b>Drag</b> parts freely once unrolled. / 展開後可自由<b>拖動物件</b>。</span><br/>
+                    <span class="opacity-80">2. <b>Double-Click</b> any part to view area details! / <b>雙擊</b>任何部分以顯示面積計算細節！</span>
                 </p>
             </div>
 
@@ -103,41 +130,41 @@
                 <h2 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2" id="params-title">Dimensions / 尺寸</h2>
                 
                 <div class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700" id="label-radius">Bottom Radius / 底部半徑 (\(R_{b}\))</label>
-                        <span id="radius-val" class="text-sm font-bold text-blue-600">7.0</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-gray-700" id="label-radius">Bottom Radius / 底部半徑</label>
+                        <input type="number" id="radius-val" class="text-sm font-bold text-blue-600 bg-transparent w-16 text-right" value="7.0" step="0.1" min="1" max="12">
                     </div>
                     <input type="range" id="radius-slider" min="1" max="12" step="0.1" value="7">
                 </div>
 
                 <div id="height-container" class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700" id="label-height">Bottom Height / 底部高度 (\(H_{b}\))</label>
-                        <span id="height-val" class="text-sm font-bold text-blue-600">4.0</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-gray-700" id="label-height">Bottom Height / 底部高度</label>
+                        <input type="number" id="height-val" class="text-sm font-bold text-blue-600 bg-transparent w-16 text-right" value="4.0" step="0.1" min="1" max="10">
                     </div>
                     <input type="range" id="height-slider" min="1" max="10" step="0.1" value="4">
                 </div>
 
                 <div id="inner-radius-container" class="mb-4 hidden">
-                    <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700">Inner Radius / 內半徑 (\(r_{in}\))</label>
-                        <span id="inner-radius-val" class="text-sm font-bold" style="color: #E26D5C;">4.0</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-gray-700">Inner Radius / 內半徑</label>
+                        <input type="number" id="inner-radius-val" class="text-sm font-bold bg-transparent w-16 text-right" style="color: #E26D5C;" value="4.0" step="0.1" min="0.1" max="6.9">
                     </div>
                     <input type="range" id="inner-radius-slider" min="0.1" max="6.9" step="0.1" value="4.0">
                 </div>
 
                 <div id="top-radius-container" class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700">Top Radius / 頂部半徑 (\(R_{t}\))</label>
-                        <span id="top-radius-val" class="text-sm font-bold" style="color: #D0C8CC;">3.0</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-gray-700">Top Radius / 頂部半徑</label>
+                        <input type="number" id="top-radius-val" class="text-sm font-bold bg-transparent w-16 text-right" style="color: #A39BA0;" value="3.0" step="0.1" min="0.1" max="7">
                     </div>
                     <input type="range" id="top-radius-slider" min="0.1" max="7" step="0.1" value="3.0">
                 </div>
 
                 <div id="top-height-container">
-                    <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700">Top Height / 頂部高度 (\(H_{t}\))</label>
-                        <span id="top-height-val" class="text-sm font-bold" style="color: #D0C8CC;">4.0</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-gray-700">Top Height / 頂部高度</label>
+                        <input type="number" id="top-height-val" class="text-sm font-bold bg-transparent w-16 text-right" style="color: #A39BA0;" value="4.0" step="0.1" min="1" max="10">
                     </div>
                     <input type="range" id="top-height-slider" min="1" max="10" step="0.1" value="4.0">
                 </div>
@@ -154,22 +181,27 @@
         </div>
     </div>
 
-    <!-- Right Area: 3D Canvas -->
-    <div class="w-full md:w-2/3 lg:w-3/4 h-[50vh] md:h-full relative flex-grow" id="canvas-wrapper">
+    <!-- Right Area: 3D Canvas & Fixed Overlays -->
+    <div class="w-full md:w-2/3 lg:w-3/4 h-[50vh] md:h-full relative flex-grow overflow-hidden" id="canvas-wrapper">
         <div id="canvas-container"></div>
         
+        <!-- Dimension Tooltip Panel (Fixed top-left instead of following mouse) -->
+        <div id="dim-tooltip" class="absolute hidden bg-gray-900/95 text-white p-4 rounded-lg shadow-2xl text-sm border border-gray-700 backdrop-blur-sm z-50 top-4 left-4 min-w-[260px] cursor-pointer">
+            <!-- Content injected via JS -->
+        </div>
+        
         <!-- Legend Overlay -->
-        <div id="dynamic-legend" class="absolute top-4 right-4 bg-white/90 p-3 rounded shadow border border-gray-200 text-sm pointer-events-none">
+        <div id="dynamic-legend" class="absolute top-4 right-4 bg-white/90 p-3 rounded shadow border border-gray-200 text-sm pointer-events-none z-10">
             <!-- Populated by JS -->
         </div>
 
-        <div class="absolute bottom-4 right-4 bg-white/80 px-3 py-1 rounded shadow text-xs text-gray-600 pointer-events-none">
+        <div class="absolute bottom-4 right-4 bg-white/80 px-3 py-1 rounded shadow text-xs text-gray-600 pointer-events-none z-10">
             Left Click: Rotate | Right Click: Pan | Scroll: Zoom
         </div>
     </div>
 
     <script>
-        // --- 3D Scene Setup ---
+        // --- 3D Scene Setup / 3D場景設定 ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf8fafc); 
@@ -200,11 +232,10 @@
         dirLight.shadow.camera.right = 25;
         scene.add(dirLight);
 
-        // Main group to hold shapes - scale applies here
         const mainGroup = new THREE.Group();
         scene.add(mainGroup);
 
-        // --- Materials (Palette matching the provided image reference) ---
+        // --- Materials / 材質與配色 ---
         const matOptions = { roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide, transparent: true, opacity: 0.95 };
         
         const cOuter = 0xA8D0E6;   // Sky blue
@@ -222,29 +253,20 @@
         const matTopBase = new THREE.MeshStandardMaterial({ color: cTopBase, ...matOptions });
         const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x2C3E50, linewidth: 1, transparent: true, opacity: 0.4 });
 
-        // --- Logic & State ---
+        // --- Logic & State / 邏輯與狀態 ---
         let currentMode = 3; 
         let params = { r: 7.0, rin: 4.0, h: 4.0, rt: 3.0, ht: 4.0, unfold: 0 };
         let activeFaces = [];
-        let autoAnimationDir = 0; // 1 for unfolding, -1 for folding
+        let autoAnimationDir = 0; 
         let modelScale = 1.0; 
+        let activeTooltipFaceUUID = null; // Tracks which face's dimensions are currently shown
 
         // DOM Elements
         const modeSelector = document.getElementById('mode-selector');
-        const radiusSlider = document.getElementById('radius-slider');
-        const heightSlider = document.getElementById('height-slider');
-        const innerRadiusSlider = document.getElementById('inner-radius-slider');
-        const topRadiusSlider = document.getElementById('top-radius-slider');
-        const topHeightSlider = document.getElementById('top-height-slider');
-        const unfoldSlider = document.getElementById('unfold-slider');
         const autoUnfoldBtn = document.getElementById('auto-unfold-btn');
-        
-        const radiusVal = document.getElementById('radius-val');
-        const heightVal = document.getElementById('height-val');
-        const innerRadiusVal = document.getElementById('inner-radius-val');
-        const topRadiusVal = document.getElementById('top-radius-val');
-        const topHeightVal = document.getElementById('top-height-val');
+        const unfoldSlider = document.getElementById('unfold-slider');
         const unfoldVal = document.getElementById('unfold-val');
+        const dimTooltip = document.getElementById('dim-tooltip');
         
         const innerRadiusContainer = document.getElementById('inner-radius-container');
         const topRadiusContainer = document.getElementById('top-radius-container');
@@ -254,34 +276,42 @@
 
         document.getElementById('mode-selector').value = "3";
 
-        // --- Model Resizing Handlers ---
+        // --- Shared function to hide tooltip ---
+        function hideTooltip() {
+            dimTooltip.classList.add('hidden');
+            activeTooltipFaceUUID = null;
+        }
+
+        // --- Model Resizing Handlers / 模型縮放控制 ---
         document.getElementById('model-shrink-btn').addEventListener('click', () => {
             modelScale = Math.max(0.4, modelScale - 0.2);
             mainGroup.scale.set(modelScale, modelScale, modelScale);
+            hideTooltip();
         });
 
         document.getElementById('model-grow-btn').addEventListener('click', () => {
             modelScale = Math.min(2.5, modelScale + 0.2);
             mainGroup.scale.set(modelScale, modelScale, modelScale);
+            hideTooltip();
         });
 
-        // --- UI Updates ---
+        // --- UI Updates / 介面更新 ---
         function updateUIForMode() {
             if (currentMode === 1) {
-                labelRadius.innerHTML = "Radius / 半徑 (\\(r\\))";
-                labelHeight.innerHTML = "Height / 高度 (\\(h\\))";
+                labelRadius.innerHTML = "Radius / 半徑";
+                labelHeight.innerHTML = "Height / 高度";
                 innerRadiusContainer.style.display = 'none';
                 topRadiusContainer.style.display = 'none';
                 topHeightContainer.style.display = 'none';
             } else if (currentMode === 2) {
-                labelRadius.innerHTML = "Outer Radius / 外半徑 (\\(R\\))";
-                labelHeight.innerHTML = "Height / 高度 (\\(h\\))";
+                labelRadius.innerHTML = "Outer Radius / 外半徑";
+                labelHeight.innerHTML = "Height / 高度";
                 innerRadiusContainer.style.display = 'block';
                 topRadiusContainer.style.display = 'none';
                 topHeightContainer.style.display = 'none';
             } else if (currentMode === 3) {
-                labelRadius.innerHTML = "Bottom Radius / 底部半徑 (\\(R_b\\))";
-                labelHeight.innerHTML = "Bottom Height / 底部高度 (\\(H_b\\))";
+                labelRadius.innerHTML = "Bottom Radius / 底部半徑";
+                labelHeight.innerHTML = "Bottom Height / 底部高度";
                 innerRadiusContainer.style.display = 'none';
                 topRadiusContainer.style.display = 'block';
                 topHeightContainer.style.display = 'block';
@@ -297,78 +327,99 @@
             }
         }
 
-        // --- Parameters Handlers ---
+        // --- Unified Parameter Handling & Binding / 參數雙向綁定與校正 ---
+        function updateAllParameters() {
+            params.r = Math.max(1, Math.min(12, params.r));
+            params.h = Math.max(1, Math.min(10, params.h));
+            
+            if (params.rin >= params.r) {
+                params.rin = Math.max(0.1, params.r - 0.1);
+            }
+            if (params.rt > params.r) {
+                params.rt = params.r;
+            }
+            params.ht = Math.max(1, Math.min(10, params.ht));
+
+            document.getElementById('radius-slider').value = params.r;
+            document.getElementById('radius-val').value = params.r.toFixed(1);
+            
+            document.getElementById('height-slider').value = params.h;
+            document.getElementById('height-val').value = params.h.toFixed(1);
+            
+            document.getElementById('inner-radius-slider').max = params.r - 0.1;
+            document.getElementById('inner-radius-slider').value = params.rin;
+            document.getElementById('inner-radius-val').value = params.rin.toFixed(1);
+            
+            document.getElementById('top-radius-slider').max = params.r;
+            document.getElementById('top-radius-slider').value = params.rt;
+            document.getElementById('top-radius-val').value = params.rt.toFixed(1);
+            
+            document.getElementById('top-height-slider').value = params.ht;
+            document.getElementById('top-height-val').value = params.ht.toFixed(1);
+
+            hideTooltip();
+            buildGeometry(); 
+            updateMath();
+        }
+
+        function bindInputs(key, sliderId, numId) {
+            const slider = document.getElementById(sliderId);
+            const num = document.getElementById(numId);
+            
+            slider.addEventListener('input', (e) => {
+                params[key] = parseFloat(e.target.value);
+                updateAllParameters();
+            });
+            
+            num.addEventListener('change', (e) => {
+                let val = parseFloat(e.target.value);
+                if (!isNaN(val)) params[key] = val;
+                updateAllParameters();
+            });
+            
+            num.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                    params[key] = val;
+                    buildGeometry();
+                    updateMath();
+                    slider.value = val;
+                }
+            });
+        }
+
+        bindInputs('r', 'radius-slider', 'radius-val');
+        bindInputs('h', 'height-slider', 'height-val');
+        bindInputs('rin', 'inner-radius-slider', 'inner-radius-val');
+        bindInputs('rt', 'top-radius-slider', 'top-radius-val');
+        bindInputs('ht', 'top-height-slider', 'top-height-val');
+
         modeSelector.addEventListener('change', (e) => {
             currentMode = parseInt(e.target.value);
             updateUIForMode();
-            buildGeometry();
-            updateMath();
+            updateAllParameters();
         });
 
         unfoldSlider.addEventListener('input', (e) => {
             params.unfold = parseFloat(e.target.value);
             unfoldVal.innerText = Math.round(params.unfold * 100) + '%';
-            
-            autoAnimationDir = 0; // Stop auto animation when user manually drags
+            autoAnimationDir = 0; 
             updateAutoBtnUI();
         });
 
         autoUnfoldBtn.addEventListener('click', () => {
-            if (params.unfold >= 1 || autoAnimationDir === 1) {
-                autoAnimationDir = -1; // Switch to folding
-            } else {
-                autoAnimationDir = 1;  // Switch to unfolding
-            }
+            if (params.unfold >= 1 || autoAnimationDir === 1) autoAnimationDir = -1; 
+            else autoAnimationDir = 1;  
             updateAutoBtnUI();
         });
 
-        radiusSlider.addEventListener('input', (e) => {
-            params.r = parseFloat(e.target.value);
-            radiusVal.innerText = params.r.toFixed(1);
-            if (params.rin >= params.r) {
-                params.rin = Math.max(0.1, params.r - 0.1);
-                innerRadiusSlider.value = params.rin;
-                innerRadiusVal.innerText = params.rin.toFixed(1);
-            }
-            innerRadiusSlider.max = params.r - 0.1;
-            if (params.rt > params.r) {
-                params.rt = params.r;
-                topRadiusSlider.value = params.rt;
-                topRadiusVal.innerText = params.rt.toFixed(1);
-            }
-            topRadiusSlider.max = params.r;
-            buildGeometry(); updateMath();
-        });
-
-        innerRadiusSlider.addEventListener('input', (e) => {
-            let val = parseFloat(e.target.value);
-            if (val >= params.r) { val = params.r - 0.1; e.target.value = val; }
-            params.rin = val; innerRadiusVal.innerText = params.rin.toFixed(1);
-            buildGeometry(); updateMath();
-        });
-
-        topRadiusSlider.addEventListener('input', (e) => {
-            let val = parseFloat(e.target.value);
-            if (val > params.r) { val = params.r; e.target.value = val; }
-            params.rt = val; topRadiusVal.innerText = params.rt.toFixed(1);
-            buildGeometry(); updateMath();
-        });
-
-        heightSlider.addEventListener('input', (e) => {
-            params.h = parseFloat(e.target.value); heightVal.innerText = params.h.toFixed(1);
-            buildGeometry(); updateMath();
-        });
-
-        topHeightSlider.addEventListener('input', (e) => {
-            params.ht = parseFloat(e.target.value); topHeightVal.innerText = params.ht.toFixed(1);
-            buildGeometry(); updateMath();
-        });
-
-        // --- Custom Geometry Generation ---
+        // --- Custom Geometry Generation / 自定義幾何生成 ---
 
         function addLateral(r, h, foldedPos, unfoldedPos, mat) {
             const width = 2 * Math.PI * r;
             const geo = new THREE.PlaneGeometry(width, h, 64, 1);
+            const originalPositions = new Float32Array(geo.attributes.position.array);
+
             const mesh = new THREE.Mesh(geo, mat);
             mesh.castShadow = true; mesh.receiveShadow = true;
             
@@ -380,9 +431,7 @@
             group.userData = { 
                 dragOffset: new THREE.Vector3(), 
                 isDraggable: true,
-                isFlat: false,
-                flatAngleCurrent: 0,
-                targetFlatAngle: 0
+                dim: { type: 'rect', w: width, h: h, r: r } 
             };
             mainGroup.add(group);
 
@@ -392,14 +441,18 @@
                     const thetaMax = THREE.MathUtils.lerp(2 * Math.PI, 0.0001, unfoldAmt);
                     const currentR = width / thetaMax;
                     const pos = geo.attributes.position;
+                    
                     for (let i = 0; i < pos.count; i++) {
-                        const x = pos.getX(i);
-                        const y = pos.getY(i);
-                        const alpha = (x / width) * thetaMax;
+                        const origX = originalPositions[i * 3];
+                        const origY = originalPositions[i * 3 + 1];
+                        
+                        const alpha = (origX / width) * thetaMax;
                         const nx = currentR * Math.sin(alpha);
                         const nz = currentR * Math.cos(alpha) - currentR;
-                        pos.setXYZ(i, nx, y, nz);
+                        
+                        pos.setXYZ(i, nx, origY, nz);
                     }
+                    pos.needsUpdate = true; 
                     geo.computeVertexNormals();
                     
                     edges.geometry.dispose();
@@ -407,7 +460,6 @@
 
                     group.position.lerpVectors(foldedPos, unfoldedPos, unfoldAmt);
                     group.position.add(group.userData.dragOffset);
-                    group.rotation.x = group.userData.flatAngleCurrent;
                 }
             });
         }
@@ -432,9 +484,7 @@
             group.userData = { 
                 dragOffset: new THREE.Vector3(), 
                 isDraggable: true,
-                isFlat: false,
-                flatAngleCurrent: 0,
-                targetFlatAngle: 0
+                dim: { type: rInner > 0 ? 'ring' : 'circle', rOut: rOuter, rIn: rInner } 
             };
             mainGroup.add(group);
 
@@ -443,8 +493,7 @@
                 update: (unfoldAmt) => {
                     group.position.lerpVectors(hingePos, unfoldedPos, unfoldAmt);
                     group.position.add(group.userData.dragOffset);
-                    // Base fold/unfold rotation + individual double click lay-flat rotation
-                    group.rotation.x = THREE.MathUtils.lerp(foldAngle, 0, unfoldAmt) + group.userData.flatAngleCurrent;
+                    group.rotation.x = THREE.MathUtils.lerp(foldAngle, 0, unfoldAmt);
                 }
             });
         }
@@ -480,7 +529,7 @@
             }
         }
 
-        // --- Displays (Bilingual Updates) ---
+        // --- Displays (Bilingual Updates) / 顯示與公式 ---
         function updateLegend() {
             const legend = document.getElementById('dynamic-legend');
             let html = '<h3 class="font-bold text-gray-700 mb-2 text-xs uppercase">Color Legend / 顏色圖例</h3>';
@@ -507,17 +556,17 @@
             } else if (currentMode === 2) {
                 const R = params.r; const rin = params.rin; const h = params.h;
                 const outer = 2 * Math.PI * R * h; const inner = 2 * Math.PI * rin * h; const ringArea = Math.PI * (Math.pow(R, 2) - Math.pow(rin, 2));
-                mathHTML = `<p class="mb-2 text-sm text-gray-500 font-semibold">Hollow Pipe / 空心圓柱(管)</p><p>\\[ A = \\color{#3b82f6}{2\\pi R h} + \\color{#f97316}{2\\pi r_{in} h} + \\color{#f87171}{2\\pi(R^2 - r_{in}^2)} \\]</p><p class="text-xl font-bold text-gray-800 mt-2">\\[ A \\approx ${(outer + inner + 2 * ringArea).toFixed(2)} \\]</p>`;
+                mathHTML = `<p class="mb-2 text-sm text-gray-500 font-semibold">Hollow Pipe / 空心圓柱(管)</p><p>\\[ A = \\color{#3b82f6}{2\\pi(${R})(${h})} + \\color{#f97316}{2\\pi(${rin})(${h})} + \\color{#f87171}{2\\pi(${R}^2 - ${rin}^2)} \\]</p><p class="text-xl font-bold text-gray-800 mt-2">\\[ A \\approx ${(outer + inner + 2 * ringArea).toFixed(2)} \\]</p>`;
             } else if (currentMode === 3) {
                 const Rb = params.r; const Hb = params.h; const Rt = params.rt; const Ht = params.ht;
                 const botLat = 2 * Math.PI * Rb * Hb; const botBase = Math.PI * Math.pow(Rb, 2); const topLat = 2 * Math.PI * Rt * Ht;
-                mathHTML = `<div style="font-size: 0.85em;"><p class="mb-1 text-xs text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200"><b>Notice / 注意：</b><br/>The Exposed Ring area + Top Base area perfectly equals one Bottom Base area! <br/>外露圓環面積 + 頂部底面積 剛好等於 一個底部底面積！</p><p>\\[ A = \\color{#3b82f6}{2\\pi R_b H_b} + \\color{#06b6d4}{2\\pi R_t H_t} + 2\\pi R_b^2 \\]</p><p class="text-xl font-bold text-gray-800 mt-1">\\[ A \\approx ${(botLat + topLat + 2 * botBase).toFixed(2)} \\]</p></div>`;
+                mathHTML = `<div style="font-size: 0.85em;"><p class="mb-1 text-xs text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200"><b>Notice / 注意：</b><br/>The Exposed Ring area + Top Base area perfectly equals one Bottom Base area! <br/>外露圓環面積 + 頂部底面積 剛好等於 一個底部底面積！</p><p>\\[ A = \\color{#3b82f6}{2\\pi(${Rb})(${Hb})} + \\color{#06b6d4}{2\\pi(${Rt})(${Ht})} + 2\\pi(${Rb}^2) \\]</p><p class="text-xl font-bold text-gray-800 mt-1">\\[ A \\approx ${(botLat + topLat + 2 * botBase).toFixed(2)} \\]</p></div>`;
             }
             document.getElementById('math-display').innerHTML = mathHTML;
             if (window.MathJax) MathJax.typesetPromise([document.getElementById('math-display')]).catch((err) => console.log(err.message));
         }
 
-        // --- Dragging & Double Click Interactions ---
+        // --- Dragging & Double Click Interactions / 拖曳與雙擊互動 ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let draggedFace = null;
@@ -526,7 +575,7 @@
         let offsetStart = new THREE.Vector3();
 
         container.addEventListener('pointerdown', (e) => {
-            if (params.unfold < 0.95) return; // Disallow dragging if not unfolded
+            if (params.unfold < 0.95) return; 
             
             const rect = container.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -549,7 +598,13 @@
             }
         });
 
-        // Smart Double Click logic
+        // Tooltip self-close on double click
+        dimTooltip.addEventListener('dblclick', (e) => {
+            e.stopPropagation(); // prevent canvas double click
+            hideTooltip();
+        });
+
+        // Double Click Logic for Tooltip Dimension Display
         container.addEventListener('dblclick', (e) => {
             const rect = container.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -563,17 +618,71 @@
                 while (obj && !obj.userData.isDraggable) obj = obj.parent;
                 
                 if (obj && obj.userData.isDraggable) {
-                    // If the whole model is not fully unfolded, trigger global unfold
-                    if (params.unfold < 0.99) {
-                        if (autoAnimationDir !== 1) autoUnfoldBtn.click();
+                    // Check if clicking the currently active tooltip face to close it
+                    if (activeTooltipFaceUUID === obj.uuid && !dimTooltip.classList.contains('hidden')) {
+                        hideTooltip();
                         return;
                     }
 
-                    // If it is fully unfolded, toggle the face to lay flat or stand up
-                    const ud = obj.userData;
-                    ud.isFlat = !ud.isFlat;
-                    ud.targetFlatAngle = ud.isFlat ? -Math.PI / 2 : 0;
+                    // Otherwise, build and show the tooltip
+                    activeTooltipFaceUUID = obj.uuid;
+                    const dim = obj.userData.dim;
+                    let content = '';
+                    
+                    if (dim.type === 'rect') {
+                        content = `
+                            <div class="mb-2 border-b border-gray-600 pb-2 font-bold text-blue-300 flex justify-between">
+                                <span>Lateral Surface / 側面 (矩形)</span>
+                            </div>
+                            <div class="flex justify-between gap-6"><span>Length / 長度:</span> <span class="text-white font-mono">${(2 * Math.PI * dim.r).toFixed(2)}</span></div>
+                            <div class="flex justify-between gap-6"><span>Width / 寬度:</span> <span class="text-white font-mono">${dim.h.toFixed(2)}</span></div>
+                            
+                            <div class="mt-4 text-xs text-gray-400">Area Calculation / 面積計算:</div>
+                            <div class="bg-gray-800 p-2 rounded mt-1">
+                                <div class="text-gray-300 text-xs tracking-wider">Length × Width / 長 × 寬</div>
+                                <div class="font-mono text-sm text-gray-200 mt-1">2π(${dim.r.toFixed(1)}) × ${dim.h.toFixed(1)}</div>
+                                <div class="font-mono text-base font-bold text-blue-300 mt-1">≈ ${(2 * Math.PI * dim.r * dim.h).toFixed(2)}</div>
+                            </div>
+                            <div class="text-[10px] text-gray-500 text-right mt-3 font-bold border-t border-gray-700 pt-1">Double-click to close / 雙擊關閉</div>
+                        `;
+                    } else if (dim.type === 'circle') {
+                        content = `
+                            <div class="mb-2 border-b border-gray-600 pb-2 font-bold text-green-300 flex justify-between">
+                                <span>Circular Base / 圓形底面</span>
+                            </div>
+                            <div class="flex justify-between gap-6"><span>Radius / 半徑:</span> <span class="text-white font-mono">${dim.rOut.toFixed(2)}</span></div>
+                            
+                            <div class="mt-4 text-xs text-gray-400">Area Calculation / 面積計算:</div>
+                            <div class="bg-gray-800 p-2 rounded mt-1">
+                                <div class="text-gray-300 text-xs tracking-wider">π × Radius² / π × 半徑²</div>
+                                <div class="font-mono text-sm text-gray-200 mt-1">π × (${dim.rOut.toFixed(1)})²</div>
+                                <div class="font-mono text-base font-bold text-green-300 mt-1">≈ ${(Math.PI * Math.pow(dim.rOut, 2)).toFixed(2)}</div>
+                            </div>
+                            <div class="text-[10px] text-gray-500 text-right mt-3 font-bold border-t border-gray-700 pt-1">Double-click to close / 雙擊關閉</div>
+                        `;
+                    } else if (dim.type === 'ring') {
+                        content = `
+                            <div class="mb-2 border-b border-gray-600 pb-2 font-bold text-red-300 flex justify-between">
+                                <span>Ring Base / 圓環底面</span>
+                            </div>
+                            <div class="flex justify-between gap-6"><span>Outer Radius / 外半徑:</span> <span class="text-white font-mono">${dim.rOut.toFixed(2)}</span></div>
+                            <div class="flex justify-between gap-6"><span>Inner Radius / 內半徑:</span> <span class="text-white font-mono">${dim.rIn.toFixed(2)}</span></div>
+                            
+                            <div class="mt-4 text-xs text-gray-400">Area Calculation / 面積計算:</div>
+                            <div class="bg-gray-800 p-2 rounded mt-1">
+                                <div class="text-gray-300 text-xs tracking-wider">π × (Outer² - Inner²) / π × (外半徑² - 內半徑²)</div>
+                                <div class="font-mono text-sm text-gray-200 mt-1">π × (${dim.rOut.toFixed(1)}² - ${dim.rIn.toFixed(1)}²)</div>
+                                <div class="font-mono text-base font-bold text-red-300 mt-1">≈ ${(Math.PI * (Math.pow(dim.rOut, 2) - Math.pow(dim.rIn, 2))).toFixed(2)}</div>
+                            </div>
+                            <div class="text-[10px] text-gray-500 text-right mt-3 font-bold border-t border-gray-700 pt-1">Double-click to close / 雙擊關閉</div>
+                        `;
+                    }
+                    
+                    dimTooltip.innerHTML = content;
+                    dimTooltip.classList.remove('hidden');
                 }
+            } else {
+                // Clicking on empty space doesn't necessarily close it, but keeping it open per instruction
             }
         });
 
@@ -612,12 +721,11 @@
             camera.updateProjectionMatrix();
         });
 
-        // --- Animation Engine ---
+        // --- Animation Engine / 動畫引擎 ---
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
             
-            // Global slider auto animation
             if (autoAnimationDir !== 0) {
                 params.unfold += 0.015 * autoAnimationDir; 
                 if (params.unfold >= 1) { 
@@ -633,36 +741,21 @@
                 unfoldVal.innerText = Math.round(params.unfold * 100) + '%';
             }
 
-            // Sync all active faces
             activeFaces.forEach(f => {
                 const ud = f.group.userData;
-                
-                // --- SMOOTH AUTO-RETURN MAGIC ---
-                // If the user starts folding the model back up (unfold < 0.99),
-                // gracefully fly all pieces back to their original positions and angles.
                 if (params.unfold < 0.99) {
-                    ud.isFlat = false;
-                    ud.targetFlatAngle = 0;
-                    ud.dragOffset.lerp(new THREE.Vector3(0, 0, 0), 0.15); // smoothly return home
+                    ud.dragOffset.lerp(new THREE.Vector3(0, 0, 0), 0.15);
+                    if (params.unfold === 0) {
+                        ud.dragOffset.set(0, 0, 0);
+                    }
                 }
-
-                // Animate double-click lay-flat rotation
-                if (Math.abs(ud.targetFlatAngle - ud.flatAngleCurrent) > 0.001) {
-                    ud.flatAngleCurrent += (ud.targetFlatAngle - ud.flatAngleCurrent) * 0.15;
-                } else {
-                    ud.flatAngleCurrent = ud.targetFlatAngle;
-                }
-
-                // Universally apply the global unfold parameter
                 f.update(params.unfold);
             });
 
             renderer.render(scene, camera);
         }
 
-        updateAutoBtnUI();
-        updateUIForMode();
-        buildGeometry();
+        updateAllParameters();
         animate();
         window.addEventListener('load', () => setTimeout(updateMath, 500));
     </script>
